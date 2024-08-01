@@ -17,14 +17,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["JWT_SECRET_KEY"] = "super-secret"
 
 # Configure mail for password reset
-app.config['MAIL_SERVER'] = 'smtp.example.com'
+# Configuration for Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = 'your-email@example.com'
-app.config['MAIL_PASSWORD'] = 'your-email-password'
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'  # Replace with your actual Gmail address
+app.config['MAIL_PASSWORD'] = 'your_app_password'      # Replace with your actual App Password
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 
+
+
 mail = Mail(app)
+
 
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
@@ -81,43 +85,8 @@ class Login(Resource):
             }, 200)
         return make_response({"message": "Invalid credentials"}, 401)
 
-class PasswordReset(Resource):
-    def post(self):
-        email = request.json.get('email')
-        user = User.query.filter_by(email=email).first()
-        
-        if not user:
-            return make_response({"message": "Email not found"}, 404)
-        
-        reset_token = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
-        user.reset_token = reset_token
-        db.session.commit()
-
-        msg = Message('Password Reset Request', sender='your-email@example.com', recipients=[email])
-        msg.body = f'Your password reset token is: {reset_token}'
-        mail.send(msg)
-        
-        return make_response({"message": "Password reset token sent"}, 200)
-
-class PasswordUpdate(Resource):
-    def post(self):
-        reset_token = request.json.get('reset_token')
-        new_password = request.json.get('new_password')
-        user = User.query.filter_by(reset_token=reset_token).first()
-        
-        if not user:
-            return make_response({"message": "Invalid reset token"}, 400)
-        
-        user.password = bcrypt.generate_password_hash(new_password)
-        user.reset_token = None  # Invalidate the token after use
-        db.session.commit()
-        
-        return make_response({"message": "Password updated successfully"}, 200)
 
 api.add_resource(Users, '/users')
 api.add_resource(Login, '/login')
-api.add_resource(PasswordReset, '/password-reset')
-api.add_resource(PasswordUpdate, '/password-update')
-
 if __name__ == '__main__':
     app.run(debug=True)
