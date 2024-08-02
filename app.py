@@ -4,6 +4,7 @@ from flask_restful import Api, Resource
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_mail import Mail, Message
+from flask_cors import CORS  # Import CORS
 from models import db, User
 import random
 import string
@@ -11,13 +12,15 @@ import string
 # Initialize the flask application
 app = Flask(__name__)
 
+# Configure CORS
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins; you can restrict this to specific domains
+
 # Configure the database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["JWT_SECRET_KEY"] = "super-secret"
 
 # Configure mail for password reset
-# Configuration for Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USERNAME'] = 'your_email@gmail.com'  # Replace with your actual Gmail address
@@ -25,10 +28,7 @@ app.config['MAIL_PASSWORD'] = 'your_app_password'      # Replace with your actua
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 
-
-
 mail = Mail(app)
-
 
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
@@ -85,8 +85,8 @@ class Login(Resource):
             }, 200)
         return make_response({"message": "Invalid credentials"}, 401)
 
-
 api.add_resource(Users, '/users')
 api.add_resource(Login, '/login')
+
 if __name__ == '__main__':
     app.run(debug=True)
